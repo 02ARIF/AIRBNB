@@ -13,7 +13,7 @@ const { MongoStore } = require("connect-mongo");
 const flash = require("connect-flash");
 
 // Correct path because ExpressError.js is inside utils/
-const ExpressError = require("./utils/ExpressError");
+const ExpressError = require("../utils/ExpressError");
 
 const listingRouter = require("./routes/listing");
 const reviewRouter = require("./routes/review");
