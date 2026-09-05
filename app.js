@@ -29,7 +29,6 @@ const User = require("./models/user");
 // -------------------- APP CONFIGURATION --------------------
 
 app.set("view engine", "ejs");
-
 app.set("views", path.join(__dirname, "views"));
 
 app.engine("ejs", ejsMate);
@@ -46,10 +45,6 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // -------------------- DATABASE CONNECTION --------------------
 
-// Local MongoDB
-// const MONGO_URL = "mongodb://127.0.0.1:27017/AIRBNB";
-
-// MongoDB Atlas
 const dburl = process.env.ATLASDB_URL;
 
 async function main() {
@@ -61,7 +56,7 @@ main().catch((err) => {
   console.log("MongoDB connection error:", err);
 });
 
-// -------------------- MONGO ATLAS SESSION STORE --------------------
+// -------------------- MONGO SESSION STORE --------------------
 
 const store = MongoStore.create({
   mongoUrl: dburl,
@@ -89,7 +84,9 @@ const sessionOptions = {
   saveUninitialized: true,
 
   cookie: {
-    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    expires: new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    ),
 
     maxAge: 7 * 24 * 60 * 60 * 1000,
 
@@ -109,50 +106,43 @@ app.use(passport.initialize());
 
 app.use(passport.session());
 
-passport.use(new localStrategy(User.authenticate()));
+passport.use(
+  new localStrategy(User.authenticate())
+);
 
 passport.serializeUser(User.serializeUser());
 
 passport.deserializeUser(User.deserializeUser());
 
-// -------------------- EJS LOCALS --------------------
+// -------------------- LOCALS --------------------
 
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
-
   res.locals.error = req.flash("error");
-
   res.locals.currUser = req.user;
 
   next();
 });
 
-// -------------------- DEMO USER --------------------
+// -------------------- ROOT ROUTE --------------------
 
-// app.get("/demouser", async (req, res) => {
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
 
-//   let fakeUser = new User({
-//     email: "stu18@gmail.com",
-//     username: "18_Student",
-//   });
+// -------------------- LISTING ROUTES --------------------
 
-//   let registeredUser = await User.register(
-//     fakeUser,
-//     "helloworld"
-//   );
-
-//   res.send(registeredUser);
-// });
-
-// -------------------- ROUTES --------------------
-
-// Listing routes
 app.use("/listings", listingRouter);
 
-// Review routes
-app.use("/listings/:id/reviews", reviewRouter);
+// -------------------- REVIEW ROUTES --------------------
 
-// User routes
+app.use(
+  "/listings/:id/reviews",
+  reviewRouter
+);
+
+// -------------------- USER ROUTES --------------------
+
 app.use("/", user);
 
 // -------------------- FAVICON --------------------
@@ -175,7 +165,12 @@ app.get(
 app.all("/*splat", (req, res, next) => {
   console.log("404 hit for:", req.originalUrl);
 
-  next(new ExpressError(404, "Page Not Found"));
+  next(
+    new ExpressError(
+      404,
+      "Page Not Found"
+    )
+  );
 });
 
 // -------------------- ERROR HANDLING --------------------
@@ -183,18 +178,23 @@ app.all("/*splat", (req, res, next) => {
 app.use((err, req, res, next) => {
   console.log(err);
 
-  let {
+  const {
     statusCode = 500,
     message = "Something went wrong",
   } = err;
 
-  res.status(statusCode).render("./listings/error.ejs", {
-    message,
-  });
+  res.status(statusCode).render(
+    "./listings/error.ejs",
+    {
+      message,
+    }
+  );
 });
 
 // -------------------- SERVER --------------------
 
-app.listen(3030, () => {
-  console.log("server listening on port 3030");
+const PORT = process.env.PORT || 3030;
+
+app.listen(PORT, () => {
+  console.log(`server listening on port ${PORT}`);
 });
