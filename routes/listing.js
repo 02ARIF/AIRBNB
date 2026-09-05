@@ -1,88 +1,167 @@
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
+
 const express = require("express");
-const router = express.Router();
-const { listingSchema } = require("../schema");
-const ExpressError = require("../utils/ExpressError");
+const app = express();
+const mongoose = require("mongoose");
+const path = require("path");
+const methodOverride = require("method-override");
+const ejsMate = require("ejs-mate");
+const session = require("express-session");
+const { MongoStore } = require("connect-mongo");
+const flash = require("connect-flash");
+const ExpressError = require("./utils/ExpressError");
 
-const {
-  isLoggedIn,
-  isOwner
-} = require("../middleware");
+const listingRouter = require("./routes/listing");
+const reviewRouter = require("./routes/review");
+const user = require("./routes/user");
 
-const wrapAsync = require("../utils/wrapAsync");
+const passport = require("passport");
+const localStrategy = require("passport-local");
+const User = require("./models/user");
 
-const listingController = require("../controllers/listings");
-const multer = require('multer');
-const {storage} = require('../cloudConfig')
-const upload = multer({storage});
+// -------------------- APP CONFIGURATION --------------------
 
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.engine("ejs", ejsMate);
 
+app.use(
+  express.urlencoded({
+    extended: true,
+  })
+);
 
-// -------------------- JOI VALIDATION --------------------
+app.use(methodOverride("_method"));
 
-const validateListing = (req, res, next) => {
+app.use(express.static(path.join(__dirname, "public")));
 
-  const { error } = listingSchema.validate(req.body);
+// -------------------- DATABASE CONNECTION --------------------
 
-  if (error) {
-    throw new ExpressError(
-      400,
-      error.details[0].message
-    );
-  }
+const dburl = process.env.ATLASDB_URL;
 
-  next();
+async function main() {
+  await mongoose.connect(dburl);
+}
+
+main()
+  .then(() => {
+    console.log("connected to MongoDB");
+  })
+  .catch((err) => {
+    console.log("MongoDB connection error:", err);
+  });
+
+// -------------------- MONGO SESSION STORE --------------------
+
+const store = MongoStore.create({
+  mongoUrl: dburl,
+  crypto: {
+    secret: process.env.SECRET,
+  },
+  touchAfter: 24 * 3600,
+});
+
+store.on("error", (err) => {
+  console.log("Error in MONGO SESSION STORE:", err);
+});
+
+// -------------------- SESSION --------------------
+
+const sessionOptions = {
+  store: store,
+  secret: process.env.SECRET,
+  resave: false,
+  saveUninitialized: true,
+
+  cookie: {
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+  },
 };
 
-// -------------------- ALL LISTINGS + CREATE --------------------
+app.use(session(sessionOptions));
 
-router.route("/")
-  .get(
-    wrapAsync(listingController.index)
-  )
+// -------------------- FLASH --------------------
 
-  .post(
-    isLoggedIn,
-    validateListing,upload.single('listing[image]'),
-    wrapAsync(listingController.createListing)
-  );
-// -------------------- NEW LISTING --------------------
+app.use(flash());
 
-router.get(
-  "/new",
-  isLoggedIn,
-  wrapAsync(listingController.renderNewForm)
-);
+// -------------------- PASSPORT --------------------
 
+app.use(passport.initialize());
+app.use(passport.session());
 
-// -------------------- SHOW + UPDATE + DELETE --------------------
+passport.use(new localStrategy(User.authenticate()));
 
-router.route("/:id")
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
-  .get(
-    wrapAsync(listingController.showListing)
-  )
+// -------------------- LOCALS --------------------
 
-  .put(
-    isLoggedIn,
-    isOwner,
-    upload.single('listing[image]'),
-    validateListing,
-    wrapAsync(listingController.updateListing)
-  )
+app.use((req, res, next) => {
+  res.locals.success = req.flash("success");
+  res.locals.error = req.flash("error");
+  res.locals.currUser = req.user;
+  next();
+});
 
-  .delete(
-    isLoggedIn,
-    isOwner,
-    wrapAsync(listingController.destroyListing)
-  );
+// -------------------- ROUTES --------------------
 
+// Root route
+app.get("/", (req, res) => {
+  res.redirect("/listings");
+});
 
-// -------------------- EDIT FORM --------------------
+// Listing routes
+app.use("/listings", listingRouter);
 
-router.get(
-  "/:id/edit",
-  isLoggedIn,
-  isOwner,
-  wrapAsync(listingController.renderEditForm)
-);
-module.exports = router;
+// Review routes
+app.use("/listings/:id/reviews", reviewRouter);
+
+// User routes
+app.use("/", user);
+
+// -------------------- FAVICON --------------------
+
+app.get("/favicon.ico", (req, res) => {
+  res.status(204).end();
+});
+
+// -------------------- CHROME DEVTOOLS --------------------
+
+app.get("/.well-known/appspecific/com.chrome.devtools.json", (req, res) => {
+  res.status(204).end();
+});
+
+// -------------------- 404 CATCH-ALL --------------------
+
+app.all("/*splat", (req, res, next) => {
+  console.log("404 hit for:", req.originalUrl);
+
+  next(new ExpressError(404, "Page Not Found"));
+});
+
+// -------------------- ERROR HANDLING --------------------
+
+app.use((err, req, res, next) => {
+  console.log(err);
+
+  const {
+    statusCode = 500,
+    message = "Something went wrong",
+  } = err;
+
+  res.status(statusCode).render("./listings/error.ejs", {
+    message,
+  });
+});
+
+// -------------------- SERVER --------------------
+
+const PORT = process.env.PORT || 3030;
+
+app.listen(PORT, () => {
+  console.log(`server listening on port ${PORT}`);
+});

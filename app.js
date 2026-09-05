@@ -1,6 +1,11 @@
-if(process.env.NODE_ENV != "production"){
+// -------------------- ENVIRONMENT VARIABLES --------------------
+
+if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
+
+// -------------------- IMPORTS --------------------
+
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
@@ -8,15 +13,18 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
-const {MongoStore} = require('connect-mongo')
+const { MongoStore } = require("connect-mongo");
 const flash = require("connect-flash");
+
 const ExpressError = require("./utils/ExpressError");
+
 const listingRouter = require("./routes/listing");
 const reviewRouter = require("./routes/review");
-const passport = require('passport');
-const localStrategy = require('passport-local');
-const User = require('./models/user');
-const user = require('./routes/user');
+const user = require("./routes/user");
+
+const passport = require("passport");
+const localStrategy = require("passport-local");
+const User = require("./models/user");
 
 // -------------------- APP CONFIGURATION --------------------
 
@@ -29,7 +37,7 @@ app.engine("ejs", ejsMate);
 app.use(
   express.urlencoded({
     extended: true,
-  }),
+  })
 );
 
 app.use(methodOverride("_method"));
@@ -38,39 +46,46 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // -------------------- DATABASE CONNECTION --------------------
 
+// Local MongoDB
 // const MONGO_URL = "mongodb://127.0.0.1:27017/AIRBNB";
-const dburl = process.env.ATLASDB_URL;
 
-main()
-  .then(() => {
-    console.log("connected to MongoDB");
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+// MongoDB Atlas
+const dburl = process.env.ATLASDB_URL;
 
 async function main() {
   await mongoose.connect(dburl);
+  console.log("connected to MongoDB");
 }
-//Mongo Atlas------------
+
+main().catch((err) => {
+  console.log("MongoDB connection error:", err);
+});
+
+// -------------------- MONGO ATLAS SESSION STORE --------------------
+
 const store = MongoStore.create({
-  mongoUrl:dburl,
-  crypto:{
-    secret:process.env.SECRET
+  mongoUrl: dburl,
+
+  crypto: {
+    secret: process.env.SECRET,
   },
-  touchAfter: 24*3600
 
+  touchAfter: 24 * 3600,
 });
 
-store.on("error",(err)=>{
-  console.log("Error in MONGO SESSION STORE",err);
+store.on("error", (err) => {
+  console.log("Error in MONGO SESSION STORE:", err);
 });
+
 // -------------------- SESSION --------------------
 
 const sessionOptions = {
-  store,
+  store: store,
+
   secret: process.env.SECRET,
+
   resave: false,
+
   saveUninitialized: true,
 
   cookie: {
@@ -82,62 +97,63 @@ const sessionOptions = {
   },
 };
 
-
-
-
 app.use(session(sessionOptions));
-
-
 
 // -------------------- FLASH --------------------
 
 app.use(flash());
 
-//-------------------Passport-----------------------
+// -------------------- PASSPORT --------------------
 
 app.use(passport.initialize());
+
 app.use(passport.session());
+
 passport.use(new localStrategy(User.authenticate()));
 
 passport.serializeUser(User.serializeUser());
+
 passport.deserializeUser(User.deserializeUser());
 
-// Make flash messages available in EJS
+// -------------------- EJS LOCALS --------------------
+
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
+
   res.locals.error = req.flash("error");
+
   res.locals.currUser = req.user;
+
   next();
 });
 
-//-------------Demo User--------------------------
-// app.get("/demouser",async(req,res)=>{
+// -------------------- DEMO USER --------------------
+
+// app.get("/demouser", async (req, res) => {
+
 //   let fakeUser = new User({
-//     email:"stu18@gmail.com",
-//     username:"18_Student"
+//     email: "stu18@gmail.com",
+//     username: "18_Student",
 //   });
-  
-//   let registeredUser = await User.register(fakeUser,'helloworld');
+
+//   let registeredUser = await User.register(
+//     fakeUser,
+//     "helloworld"
+//   );
+
 //   res.send(registeredUser);
-// })
+// });
+
 // -------------------- ROUTES --------------------
 
 // Listing routes
-
 app.use("/listings", listingRouter);
 
 // Review routes
-
 app.use("/listings/:id/reviews", reviewRouter);
 
-//signup-----------------------------------
+// User routes
 app.use("/", user);
-
-// -------------------- ROOT ROUTE --------------------
-
-// app.get("/", (req, res) => {
-//   res.send("Working");
-// });
 
 // -------------------- FAVICON --------------------
 
@@ -147,9 +163,12 @@ app.get("/favicon.ico", (req, res) => {
 
 // -------------------- CHROME DEVTOOLS --------------------
 
-app.get("/.well-known/appspecific/com.chrome.devtools.json", (req, res) => {
-  res.status(204).end();
-});
+app.get(
+  "/.well-known/appspecific/com.chrome.devtools.json",
+  (req, res) => {
+    res.status(204).end();
+  }
+);
 
 // -------------------- 404 CATCH-ALL --------------------
 
@@ -164,7 +183,10 @@ app.all("/*splat", (req, res, next) => {
 app.use((err, req, res, next) => {
   console.log(err);
 
-  let { statusCode = 500, message = "Something went wrong" } = err;
+  let {
+    statusCode = 500,
+    message = "Something went wrong",
+  } = err;
 
   res.status(statusCode).render("./listings/error.ejs", {
     message,
