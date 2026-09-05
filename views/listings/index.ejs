@@ -1,0 +1,198 @@
+<% layout('/layouts/boilerplate.ejs') %>
+
+  <!-- <h2 class="mb-4">All Listings</h2> -->
+  <div id="filters">
+
+    <div class="filter">
+      <i class="fa-solid fa-fire"></i>
+      <span>Trending</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-house"></i>
+      <span>Rooms</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-city"></i>
+      <span>Iconic Cities</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-mountain"></i>
+      <span>Mountains</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-person-swimming"></i>
+      <span>Amazing Pools</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-campground"></i>
+      <span>Camping</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-umbrella-beach"></i>
+      <span>Beach</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-tree"></i>
+      <span>Countryside</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-snowflake"></i>
+      <span>Arctic</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-hotel"></i>
+      <span>Hotels</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-tent"></i>
+      <span>Glamping</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-water"></i>
+      <span>Lakefront</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-water-ladder"></i>
+      <span>Lake</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-house-chimney"></i>
+      <span>Islands</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-house-chimney"></i>
+      <span>Cabins</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-chess-rook"></i>
+      <span>Castles</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-tractor"></i>
+      <span>Farms</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-house-flood-water"></i>
+      <span>Lake Houses</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-person-hiking"></i>
+      <span>Hiking</span>
+    </div>
+
+    <div class="filter">
+      <i class="fa-solid fa-sailboat"></i>
+      <span>Boats</span>
+    </div>
+
+    <!-- Tax Switch -->
+    <div class="tax-switch">
+      <span>Display total after taxes</span>
+    </div>
+
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" id="taxSwitch" />
+    </div>
+
+  </div>
+
+  <div class="row row-cols-lg-4 row-cols-md-3 row-cols-sm-2 row-cols-1 g-4">
+
+    <% for(let listing of allListings){ %>
+
+      <div class="col">
+
+        <a href="/listings/<%= listing._id %>" class="listing-link">
+
+          <div class="card listing-card">
+
+            <img src="<%= listing.image.url %>" class="card-img-top listing-img" alt="<%= listing.title %>">
+
+            <div class="card-body">
+
+              <p class="card-text">
+                <b>
+                  <%= listing.title %>
+                </b><br>
+
+                &#8377;
+
+                <span class="listing-price" data-price="<%= listing.price || 0 %>">
+                  <%= listing.price ? listing.price.toLocaleString("en-IN") : "N/A" %>
+                </span>
+
+                / night
+
+                <span class="gst-text" style="display: none;">
+                  (including GST)
+                </span>
+
+            </div>
+
+          </div>
+
+        </a>
+
+      </div>
+
+      <% } %>
+
+  </div>
+
+
+  <!-- TAX SWITCH FUNCTIONALITY -->
+
+  <script>
+    const taxSwitch = document.getElementById("taxSwitch");
+
+    const listingPrices = document.querySelectorAll(".listing-price");
+    const gstTexts = document.querySelectorAll(".gst-text");
+
+    const GST_RATE = 0.18;
+
+    taxSwitch.addEventListener("change", function () {
+
+      listingPrices.forEach(function (priceElement, index) {
+
+        const originalPrice = Number(priceElement.dataset.price);
+
+        if (taxSwitch.checked) {
+
+          const priceWithGST =
+            originalPrice + (originalPrice * GST_RATE);
+
+          priceElement.innerText =
+            Math.round(priceWithGST).toLocaleString("en-IN");
+
+          gstTexts[index].style.display = "inline";
+
+        } else {
+
+          priceElement.innerText =
+            originalPrice.toLocaleString("en-IN");
+
+          gstTexts[index].style.display = "none";
+        }
+
+      });
+
+    });
+  </script>

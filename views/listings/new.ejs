@@ -1,0 +1,123 @@
+<% layout('/layouts/boilerplate.ejs') %> 
+ 
+<div class="container mt-5 mb-5"> 
+    <div class="row justify-content-center"> 
+ 
+        <div class="col-md-8 col-lg-6"> 
+ 
+            <h2 class="mb-4 text-center">Create a New Listing</h2> 
+ 
+            <form method="POST" action="/listings" novalidate class="needs-validation" enctype="multipart/form-data"> 
+ 
+                <div class="mb-3"> 
+                    <label class="form-label">Title</label> 
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        name="listing[title]" 
+                        placeholder="Enter title" 
+                        required>
+                    <div class="valid-feedback"> 
+                        Looks good! 
+                    </div>
+                    <div class="invalid-feedback"> 
+                        Please provide a title. 
+                    </div>
+                </div> 
+ 
+                <div class="mb-3"> 
+                    <label class="form-label">Description</label> 
+                    <textarea 
+                        class="form-control" 
+                        name="listing[description]" 
+                        rows="4" 
+                        placeholder="Enter description" 
+                        required></textarea>
+                    <div class="valid-feedback"> 
+                        Looks good! 
+                    </div>
+                    <div class="invalid-feedback"> 
+                        Please provide a description. 
+                    </div>
+                </div> 
+ 
+                <div class="mb-3"> 
+                    <label class="form-label">Upload Image</label> 
+                    <input 
+                        type="file" 
+                        class="form-control" 
+                        name="listing[image]" 
+                        placeholder="Enter image URL">
+                    <div class="valid-feedback"> 
+                        Looks good! 
+                    </div>
+                    <div class="invalid-feedback"> 
+                        Please provide an image URL. 
+                    </div>
+                </div> 
+ 
+                <!-- <input 
+                    type="hidden" 
+                    name="listing[image][filename]" 
+                    value="listingimage">  -->
+ 
+                <div class="mb-3"> 
+                    <label class="form-label">Price</label> 
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        name="listing[price]" 
+                        placeholder="Enter price" 
+                        required>
+                    <div class="valid-feedback"> 
+                        Looks good! 
+                    </div>
+                    <div class="invalid-feedback"> 
+                        Please provide a valid price. 
+                    </div>
+                </div> 
+ 
+                <div class="mb-3"> 
+                    <label class="form-label">Country</label> 
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        name="listing[country]" 
+                        placeholder="Enter country" 
+                        required>
+                    <div class="valid-feedback"> 
+                        Looks good! 
+                    </div>
+                    <div class="invalid-feedback"> 
+                        Please provide a country. 
+                    </div>
+                </div> 
+ 
+                <div class="mb-4"> 
+                    <label class="form-label">Location</label> 
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        name="listing[location]" 
+                        placeholder="Enter location" 
+                        required>
+                    <div class="valid-feedback"> 
+                        Looks good! 
+                    </div>
+                    <div class="invalid-feedback"> 
+                        Please provide a location. 
+                    </div>
+                </div> 
+ 
+                <div class="d-grid"> 
+                    <button class="btn btn-dark btn-lg"> 
+                        Add Listing 
+                    </button> 
+                </div> 
+ 
+            </form> 
+ 
+        </div> 
+ 
+    </div> 
+</div>
